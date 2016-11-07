@@ -1,0 +1,65 @@
+version: "2"
+services:
+  zookeeper:
+    image: zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      deployment_net:
+        ipv4_address: 172.16.238.10
+
+  hbase:
+    build: ./hbase
+    hostname: hbase
+    links:
+     - zookeeper
+    ports:
+     - "60000:60000"
+     - "60010:60010"
+     - "60020:60020"
+     - "60030:60030"
+    networks:
+      deployment_net:
+        ipv4_address: 172.16.238.11
+
+
+  kafka:
+    image: wurstmeister/kafka:0.10.0.1
+    hostname: kafka
+    ports:
+      - "9092:9092"
+    links:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    networks:
+      deployment_net:
+        ipv4_address: 172.16.238.12
+
+
+  kafka-manager:
+    image: sheepkiller/kafka-manager
+    hostname: kafka-manager
+    ports:
+     - "9000:9000"
+    links:
+      - zookeeper
+    environment:
+      ZK_HOSTS: zookeeper:2181
+    networks:
+      deployment_net:
+        ipv4_address: 172.16.238.13
+
+
+networks:
+  deployment_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "true"
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.238.0/24
